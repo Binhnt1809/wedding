@@ -31,6 +31,8 @@ async function fetchGoogleSheet() {
 	if (!response.ok) {
 	  throw new Error(`Failed to fetch data from ${url}: ${response.statusText}`);
 	}
+	
+	$("#loading-overlay").css("display", "none");
 	return response.json();
   };
 
