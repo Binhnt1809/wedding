@@ -76,6 +76,41 @@
         border-color: #dc3545 !important;
       }
     </style>
+    <style>
+      /* Bước 2: CSS cho lớp phủ */
+      #loading-overlay {
+          display: none; /* Ẩn lớp phủ ban đầu */
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 1000;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .spinner {
+          border: 16px solid #f3f3f3;
+          border-radius: 50%;
+          border-top: 16px solid #3498db;
+          width: 120px;
+          height: 120px;
+          -webkit-animation: spin 2s linear infinite;
+          animation: spin 2s linear infinite;
+      }
+
+      @-webkit-keyframes spin {
+          0% { -webkit-transform: rotate(0deg); }
+          100% { -webkit-transform: rotate(360deg); }
+      }
+
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+  </style>
     <script
       type="text/javascript"
       async=""
@@ -121,12 +156,9 @@
       </div>
     </div>
     <main class="container">
-      <div>
+      <div id="camOn" style="text-align: center;">
         &nbsp;
-        <form
-          id="search-form"
-          method="post"
-          novalidate="novalidate">
+        <form id="search-form" method="post" novalidate="novalidate">
           <div>
             <label
               class="pb-2 text-center d-block text-black"
@@ -141,14 +173,11 @@
               class="form-control form-control-lg rounded-0 text-center"
               autocomplete="off"
               placeholder="---" />
-            <input
-              hidden
-              type="text"
-              id="id"
-              name="entry.516692212" />
+            <input hidden type="text" id="id" name="entry.516692212" />
           </div>
           <div class="errors mt-1 text-danger text-center"></div>
           <button
+            id="submitThamDu"
             type="submit"
             class="btn btn-lg btn-danger text-center w-100 mt-4">
             Xác nhận tham dự
@@ -175,13 +204,22 @@
         </div>
       </div>
     </main>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+  </div>
     <script src="./xntd_files/script.js"></script>
     <script>
       var urlParams = new URLSearchParams(window.location.search);
       var date = urlParams.get("date");
       var id = urlParams.get("id");
 
-	    $("a").attr("href", `${window.location.href.substring(0, window.location.href.lastIndexOf('xntd.html'))}index.html?id=${id}`)
+      $("a").attr(
+        "href",
+        `${window.location.href.substring(
+          0,
+          window.location.href.lastIndexOf("xntd.html")
+        )}index.html?id=${id}`
+      );
 
       function isValidDate(dateString) {
         var regEx = /^\d{2}\/\d{2}\/\d{4}$/;
@@ -221,21 +259,23 @@
             },
           },
           submitHandler: function (form) {
+            $("#loading-overlay").css("display", "flex");
             if (id) {
-				var formData = $(form).serialize();
-            $.ajax({
-              url: "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfyKAdsOo_Cfkrd70UfIpN9DerD6WYaegJ_2ejGR46MP6SHEg/formResponse",
-              data: formData,
-              type: "POST",
-              dataType: "xml",
-              error: function () {
-                alert("cảm ơn bạn đã phản hồi ạ");
-              },
-            });
-            return false;
-			}else{
-			alert("Lỗi thông tin, Vui lòng thử lại")
-			}
+              var formData = $(form).serialize();
+              $.ajax({
+                url: "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfyKAdsOo_Cfkrd70UfIpN9DerD6WYaegJ_2ejGR46MP6SHEg/formResponse",
+                data: formData,
+                type: "POST",
+                dataType: "xml",
+                error: function () {
+                  alert("cảm ơn bạn đã phản hồi ạ");
+                  window.location.reload();
+                },
+              });
+              return false;
+            } else {
+              alert("Lỗi thông tin, Vui lòng thử lại");
+            }
           },
         });
       }
@@ -317,6 +357,45 @@
             }
           });
       }
+    </script>
+    <script>
+      async function fetchGoogleSheet() {
+        const apiKey = "AIzaSyChXLCI_NcMDxpVi8XSfSopjH2MoijOst0"; // Thay thế bằng API Key của bạn
+        const sheetName = "Response"; // Tên của sheet cần truy cập
+        const sheetId = "1N5YjzpisADFocd2QH_SqIA1MeArLQn7SZSbrsmp6tu4"; // Thay thế bằng ID của Google Sheet
+        const range = "A2:D"; // Thay thế bằng range bạn muốn fetch
+
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!${range}?key=${apiKey}`;
+       
+        const fetchData = async (url) => {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch data from ${url}: ${response.statusText}`
+            );
+          }
+          return response.json();
+        };
+
+        try {
+          const data = await fetchData(url)
+
+          dataSheet = data.values.map((e) => ({
+            id: e[2],
+          }));
+
+          if (id && dataSheet) {
+            var parts = dataSheet.find((e) => e.id === id);
+            if (parts.id) {
+              document.getElementById('search-form').remove()
+              document.getElementById('camOn').innerHTML = `<h1 class="mt-2" style="font-family: 'Coiny'">Bạn đã xác nhận tham dự</b>`
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      }
+      window.onload = fetchGoogleSheet()
     </script>
   </body>
 </html>
