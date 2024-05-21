@@ -70,6 +70,7 @@ async function fetchGoogleSheet() {
 		document.getElementById("gioAn").textContent = hour;
 		document.getElementById("phutAn").textContent = minute;
 		document.getElementById("nhaGaiTrai").textContent = parts.man ? 'nhà Trai' : 'nhà Gái';
+		document.getElementById("targetNhaCuoi").href = parts.man ? '#nhaCuoiTrai' : '#nhaCuoiGai';
 	  }
 	}
   } catch (error) {
